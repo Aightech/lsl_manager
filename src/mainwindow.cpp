@@ -20,7 +20,7 @@ MainWindow::MainWindow(QWidget *parent) :
     GetModuleFileNameA( NULL, buffer, MAX_PATH );
     char * c = strstr(buffer, "tne_project")+12;
     *c = '\0';
-    std::string root_path(buffer);
+    root_path = buffer;
     ui->lineEdit_rootPath->setText(QString::fromStdString(root_path));
     ui->lineEdit_rootPath->setMinimumWidth(500);
 
@@ -99,7 +99,16 @@ MainWindow::MainWindow(QWidget *parent) :
             lab->setMinimumWidth(200);
             QLabel *arg = new QLabel("  arg.:");
             arg->setAlignment(Qt::AlignLeft);
+            QPushButton *b = new QPushButton("build");
+            connect(
+                b, &QPushButton::clicked,
+                [this, i, j]() {this->build(i, j); }
+            );
+            b->setMaximumWidth(50);
+
+
             a->addWidget(lab);
+            a->addWidget(b);
             a->addWidget(path);
             a->addWidget(arg);
             a->addWidget(arg_edit);
@@ -134,7 +143,7 @@ void MainWindow::get_dir(std::string path, std::vector<std::string>& dir)
     WIN32_FIND_DATAA data;
     std::string path_(path);
     path_+="*";
-    std::cout << path_ << std::endl;
+    //std::cout << path_ << std::endl;
     hFind = FindFirstFileA(path_.c_str(), &data);
     if (hFind != INVALID_HANDLE_VALUE)
     {
@@ -142,11 +151,34 @@ void MainWindow::get_dir(std::string path, std::vector<std::string>& dir)
             if( data.dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY)
             {
                 dir.push_back(data.cFileName);
-                std::cout << data.cFileName << std::endl;
+                //std::cout << data.cFileName << std::endl;
             }
         } while( FindNextFileA( hFind, &data) );  // FindNextFileA if using char strings (instead of TCHAR strings)
         FindClose( hFind );
     }
+}
+
+bool MainWindow::is_there(std::string path, std::string file)
+{
+    HANDLE hFind;
+    WIN32_FIND_DATAA data;
+    std::string path_(path);
+    path_+="*";
+    std::cout << path_ << std::endl;
+    hFind = FindFirstFileA(path_.c_str(), &data);
+    if (hFind != INVALID_HANDLE_VALUE)
+    {
+        do {
+            std::cout << file << " " << data.cFileName << std::endl;
+            if(file.compare(data.cFileName)==0)
+            {
+                FindClose( hFind );
+                return true;
+            }
+        } while( FindNextFileA( hFind, &data) );  // FindNextFileA if using char strings (instead of TCHAR strings)
+        FindClose( hFind );
+    }
+    return false;
 }
 
 void MainWindow::launch(int folder, int pluggin)
@@ -163,4 +195,43 @@ void MainWindow::launch(int folder, int pluggin)
         command.copy(cmd,command.size()+1);
         cmd[command.size()]='\0';
         std::system(cmd);
+}
+
+void MainWindow::build(int folder, int pluggin)
+{
+    std::string command;
+    if(is_there(root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin]+"\\", project_pluggins[folder][pluggin]+".pro") )
+    {
+        command = "qmake " + root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin]+"\\" +project_pluggins[folder][pluggin]+".pro";
+        std::cout << command << std::endl;
+        std::system(command.c_str());
+        command = "";
+    }
+    else
+    {
+        if(!is_there(root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin]+"\\","build"))
+            command = "mkdir " +root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin]+"\\build && ";
+
+        command += "cd " +root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin]+"\\build && cmake ..  -G \"MinGW Makefiles\" ";
+        std::cout << command << std::endl;
+        std::system(command.c_str());
+        command = "cd " +root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin]+"\\build && ";
+    }
+
+#ifdef WIN32
+    command += "mingw32-make -B";
+#else
+    command += "make";
+#endif
+    std::cout << command << std::endl;
+    std::system(command.c_str());
+    std::vector<std::string> v;
+    get_dir(root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin]+"\\bin\\WIN32\\Win",v);
+    if(v.size()>0)
+    {
+        project_path[folder][pluggin] = root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin]+"\\bin\\WIN32\\"+ v[0] + "\\" +project_pluggins[folder][pluggin] + ".exe";
+        project_line_path[folder][pluggin]->setText(QString::fromStdString(project_path[folder][pluggin]));
+    }
+
+
 }

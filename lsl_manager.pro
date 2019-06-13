@@ -32,17 +32,18 @@ win32:DEPLOY_TARGET = $$shell_quote($$shell_path($${OUT_PWD}/$${DESTDIR}/$${TARG
 
 #warning($${DEPLOY_COMMAND} $${DEPLOY_TARGET})
 
-CONFIG(release, debug|release)
-{
-    QMAKE_POST_LINK += $$quote($${DEPLOY_COMMAND} $${DEPLOY_TARGET})
-    QMAKE_POST_LINK += $$quote($$escape_expand(\n\t) del Makefile)
-    QMAKE_POST_LINK += $$quote($$escape_expand(\n\t) del Makefile.Debug)
-    QMAKE_POST_LINK += $$quote($$escape_expand(\n\t) del Makefile.Release)
-    QMAKE_POST_LINK += $$quote($$escape_expand(\n\t) del .qmake.stash)
-    QMAKE_POST_LINK += $$quote($$escape_expand(\n\t) del ui_mainwindow.h)
-    QMAKE_POST_LINK += $$quote($$escape_expand(\n\t) rmdir /S /Q release)
-    QMAKE_POST_LINK += $$quote($$escape_expand(\n\t) rmdir /S /Q debug)
-}
+
+#CONFIG(release, debug|release)
+#{
+#    QMAKE_POST_LINK += $$quote($${DEPLOY_COMMAND} $${DEPLOY_TARGET})
+#    QMAKE_POST_LINK += $$quote($$escape_expand(\n\t) del Makefile)
+#    QMAKE_POST_LINK += $$quote($$escape_expand(\n\t) del Makefile.Debug)
+#    QMAKE_POST_LINK += $$quote($$escape_expand(\n\t) del Makefile.Release)
+#    QMAKE_POST_LINK += $$quote($$escape_expand(\n\t) del .qmake.stash)
+#    QMAKE_POST_LINK += $$quote($$escape_expand(\n\t) del ui_mainwindow.h)
+#    QMAKE_POST_LINK += $$quote($$escape_expand(\n\t) rmdir /S /Q release)
+#    QMAKE_POST_LINK += $$quote($$escape_expand(\n\t) rmdir /S /Q debug)
+#}
 
 
 
