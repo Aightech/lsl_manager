@@ -1,0 +1,15 @@
+/*
+!.gitignore
+!lsl_manager.pro
+!/bin
+!/bin/*
+!/src
+!/src/*
+!/include
+!/include/*
+!/lib
+!/lib/*
+!/doc
+!/doc/*
+!README.md
+!CMakeLists.txt
