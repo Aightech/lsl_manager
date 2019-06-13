@@ -15,5 +15,4 @@
 !CMakeLists.txt
 
 /bin/WIN32/Window/*
-!/bin/WIN32/Window/lslsub_manager.exe
-!/bin/WIN32/Window/liblsl64.dll
+!/bin/WIN32/Window/lsl_manager.exe
