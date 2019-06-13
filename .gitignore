@@ -13,3 +13,7 @@
 !/doc/*
 !README.md
 !CMakeLists.txt
+
+/bin/WIN32/Window/*
+!/bin/WIN32/Window/lslsub_manager.exe
+!/bin/WIN32/Window/liblsl64.dll
