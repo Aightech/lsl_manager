@@ -199,8 +199,13 @@ bool MainWindow::is_there(std::string path, std::string file)
  */
 void MainWindow::launch(int folder, int pluggin)
 {
+
+    std::vector<std::string> v;
 #ifdef WIN32
-        std::string command = "start cmd /k "+ project_line_path[folder][pluggin]->text().toStdString() + " " + project_line_args[folder][pluggin]->text().toStdString();
+    std::string command;
+        command = "cd "+ root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin] + " && ";
+
+        command += "start cmd /k "+ project_line_path[folder][pluggin]->text().toStdString() + " " + project_line_args[folder][pluggin]->text().toStdString();
 #else
         std::string command = "";
 #endif
