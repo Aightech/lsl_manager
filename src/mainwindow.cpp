@@ -2,6 +2,14 @@
 #include "ui_mainwindow.h"
 
 
+#define _GNU_SOURCE    // includes _BSD_SOURCE for DT_UNKNOWN etc.
+#include <dirent.h>
+#include <stdint.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -17,7 +25,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //find the root path of the tne project
     char buffer[MAX_PATH];
-    GET_CURRENT_DIR(buffer, MAX_PATH);
+    GetCurrentDir(buffer, MAX_PATH);
     
     char * c = strstr(buffer, "tne_project")+12;
     *c = '\0';
@@ -35,11 +43,15 @@ MainWindow::MainWindow(QWidget *parent) :
             project_folders.erase (it--);
         else
         {
+            std::cout <<(*it) << std::endl;
             get_dir(root_path+(*it)+"\\",v);
             for (std::vector<std::string>::iterator it2 = v.begin() ; it2 != v.end(); ++it2)
                 if(it2->c_str()[0] == '.' || it2->compare("docs")==0 || it2->compare("lsl_manager")==0 || it2->compare("lsl_managerWeb")==0)
                     v.erase (it2--);
+            for(int i = 0; i< v.size() ; i++)
+                std::cout << "> " << v[i] << std::endl;
             project_pluggins.push_back(v);
+
         }
     }
 
@@ -56,10 +68,10 @@ MainWindow::MainWindow(QWidget *parent) :
             get_dir(root_path+project_folders[i]+"\\"+project_pluggins[i][j]+"\\bin",v);
             if(v.size()>0)
             {
-                get_dir(root_path+project_folders[i]+"\\"+project_pluggins[i][j]+"\\bin\\WIN32\\Win",v);
-                if(v.size()>0)
+                get_dir(root_path+project_folders[i]+"\\"+project_pluggins[i][j]+"\\bin\\WIN32\\",v);
+                if(v.size()>2)
                 {
-                    project_path[i][j] = root_path+project_folders[i]+"\\"+project_pluggins[i][j]+"\\bin\\WIN32\\"+ v[0] + "\\" +project_pluggins[i][j] + ".exe";
+                    project_path[i][j] = root_path+project_folders[i]+"\\"+project_pluggins[i][j]+"\\bin\\WIN32\\"+ v[2] + "\\" +project_pluggins[i][j] + ".exe";
                 }
             }
 
@@ -98,7 +110,7 @@ MainWindow::MainWindow(QWidget *parent) :
             QLineEdit *path = new QLineEdit(QString::fromStdString(project_path[i][j]));
             project_line_path[i].push_back(path);
 
-            QLineEdit *arg_edit = new QLineEdit(QString::fromStdString(project_args[i][j]));       
+            QLineEdit *arg_edit = new QLineEdit(QString::fromStdString(project_args[i][j]));
             project_line_args[i].push_back(arg_edit);
             arg_edit->setMaximumWidth(200);
 
@@ -145,40 +157,34 @@ MainWindow::~MainWindow()
  */
 void MainWindow::get_dir(std::string path, std::vector<std::string>& dir)
 {
-  // dir.clear();
-  // HANDLE hFind;
-  // WIN32_FIND_DATAA data;
-  // std::string path_(path);
-  // path_+="*";
-  // //std::cout << path_ << std::endl;
-  // hFind = FindFirstFileA(path_.c_str(), &data);
-  // if (hFind != INVALID_HANDLE_VALUE)
-  // {
-  //     do {
-  //         if( data.dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY)
-  //         {
-  //             dir.push_back(data.cFileName);
-  //             //std::cout << data.cFileName << std::endl;
-  //         }
-  //     } while( FindNextFileA( hFind, &data) );  // FindNextFileA if using char strings (instead of TCHAR strings)
-  //     FindClose( hFind );
-  // }
-  DIR *d;
-  struct dirent *ent;
-  if ((d = opendir (path.c_str())) != NULL)
+#ifndef WIN32
+    path = QDir(QString::fromStdString(path)).absolutePath().toStdString();
+#endif
+    dir.clear();
+    DIR *d;
+    struct dirent *ent;
+    if ((d = opendir (path.c_str())) != NULL)
     {
-      /* print all the files and directories within directory */
-      while ((ent = readdir (d)) != NULL)
-	{//#ifdef _DIRENT_HAVE_D_TYPE
-      if(ent->d_type == 4)
-	    dir.push_back(ent->d_name);
-      std::cout << ent->d_name << "(t:"  << (int)ent->d_type <<   ")" << std::endl;
-	}
-      closedir (d);
+        /* print all the files and directories within directory */
+        while ((ent = readdir (d)) != NULL)
+        {
+#ifdef _DIRENT_HAVE_D_TYPE
+            if(ent->d_type == 4)
+                dir.push_back(ent->d_name);
+#else
+           struct stat stbuf;
+           stat((path + ent->d_name).c_str(), &stbuf);
+           if(S_ISDIR(stbuf.st_mode))
+               dir.push_back(ent->d_name);
+#endif
+           std::cout <<ent->d_name << std::endl;
+        }
+
+        closedir (d);
     }
-  else
+    else
     {
-      std::cout << "could not open directory"<< std::endl;
+        std::cout << "could not open directory: " << path.c_str()<< std::endl;
     }
 }
 
@@ -188,48 +194,29 @@ void MainWindow::get_dir(std::string path, std::vector<std::string>& dir)
  * @param file File to find.
  * @return true if found.
  */
- bool MainWindow::is_there(std::string path, std::string file)
- {
-   // HANDLE hFind;
-   // WIN32_FIND_DATAA data;
-   // std::string path_(path);
-   // path_+="*";
-   // //std::cout << path_ << std::endl;
-   // hFind = FindFirstFileA(path_.c_str(), &data);
-   // if (hFind != INVALID_HANDLE_VALUE)
-   // {
-   //     do {
-   //         //std::cout << file << " " << data.cFileName << std::endl;
-   //         if(file.compare(data.cFileName)==0)
-   //         {
-   //             FindClose( hFind );
-   //             return true;
-   //         }
-   //     } while( FindNextFileA( hFind, &data) );  // FindNextFileA if using char strings (instead of TCHAR strings)
-   //     FindClose( hFind );
-   // }
-   // return false;
-   DIR *d;
-   struct dirent *ent;
-   if ((d = opendir (path.c_str())) != NULL)
-     {
-       /* print all the files and directories within directory */
-       while ((ent = readdir (d)) != NULL)
-	 {//#ifdef _DIRENT_HAVE_D_TYPE
-	   if(ent->d_type != DT_UNKNOWN && ent->d_type == DT_LNK && file.compare(ent->d_name)==0)
-	     {
-	       closedir (d);
-	       return true;
-	     }
-	 }
-       closedir (d);
-     }
-   else
-     {
-       std::cout << "could not open directory"<< std::endl;
-     }
-   return false;
- }
+bool MainWindow::is_there(std::string path, std::string file)
+{
+    DIR *d;
+    struct dirent *ent;
+    if ((d = opendir (path.c_str())) != NULL)
+    {
+        /* print all the files and directories within directory */
+        while ((ent = readdir (d)) != NULL)
+        {
+            if(file.compare(ent->d_name)==0)
+            {
+                closedir (d);
+                return true;
+            }
+        }
+        closedir (d);
+    }
+    else
+    {
+        std::cout << "could not open directory"<< std::endl;
+    }
+    return false;
+}
 
 /**
  * @brief MainWindow::launch launch the plugging link to the given coordinate (folder, pluggin).
@@ -239,19 +226,19 @@ void MainWindow::get_dir(std::string path, std::vector<std::string>& dir)
 void MainWindow::launch(int folder, int pluggin)
 {
 
-  std::vector<std::string> v;
+    std::vector<std::string> v;
 #ifdef WIN32
-  std::string command;
-  command = "cd "+ root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin] + " && ";
+    std::string command;
+    command = "cd "+ root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin] + " && ";
 
-  command += "start cmd /k "+ project_line_path[folder][pluggin]->text().toStdString() + " " + project_line_args[folder][pluggin]->text().toStdString();
+    command += "start cmd /k "+ project_line_path[folder][pluggin]->text().toStdString() + " " + project_line_args[folder][pluggin]->text().toStdString();
 #else
-  std::string command = "";
+    std::string command = "";
 #endif
 
 
-  std::cout << command << std::endl;
-  std::system(command.c_str());
+    std::cout << command << std::endl;
+    std::system(command.c_str());
 }
 
 /**
@@ -288,7 +275,7 @@ void MainWindow::build(int folder, int pluggin)
     std::cout << command << std::endl;
     std::system(command.c_str());
     std::vector<std::string> v;
-    get_dir(root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin]+"\\bin\\WIN32\\Win",v);
+    get_dir(root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin]+"\\bin\\WIN32\\",v);
     if(v.size()>0)
     {
         project_path[folder][pluggin] = root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin]+"\\bin\\WIN32\\"+ v[0] + "\\" +project_pluggins[folder][pluggin] + ".exe";
@@ -297,3 +284,5 @@ void MainWindow::build(int folder, int pluggin)
 
 
 }
+
+

@@ -3,16 +3,18 @@
 
 #include <QMainWindow>
 #include <QPushButton>
+#include <QDir>
 
 #ifdef WIN32
 #include <windows.h>
 #include <fileapi.h>
 #include <sys/types.h>
-#define GET_CURRENT_DIR(...) GetModuleFileNameA(NULL __VA_OPT__(,) __VA_ARGS__)
+#include <direct.h>
+#define GetCurrentDir _getcwd
 #else
 #include <unistd.h>
 #define MAX_PATH 100
-#define GET_CURRENT_DIR(...) getcwd( __VA_ARGS__)
+#define GetCurrentDir getcwd
 #endif
 
 #include <string>
