@@ -4,9 +4,19 @@
 #include <QMainWindow>
 #include <QPushButton>
 
+#ifdef WIN32
 #include <windows.h>
 #include <fileapi.h>
+#include <sys/types.h>
+#define GET_CURRENT_DIR(...) GetModuleFileNameA(NULL __VA_OPT__(,) __VA_ARGS__)
+#else
+#include <unistd.h>
+#define MAX_PATH 100
+#define GET_CURRENT_DIR(...) getcwd( __VA_ARGS__)
+#endif
+
 #include <string>
+#include <dirent.h>
 #include <iostream>
 #include <QLineEdit>
 

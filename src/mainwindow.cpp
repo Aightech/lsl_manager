@@ -17,9 +17,11 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //find the root path of the tne project
     char buffer[MAX_PATH];
-    GetModuleFileNameA( NULL, buffer, MAX_PATH );
+    GET_CURRENT_DIR(buffer, MAX_PATH);
+    
     char * c = strstr(buffer, "tne_project")+12;
     *c = '\0';
+    std::cout << buffer << std::endl;
     root_path = buffer;
     ui->lineEdit_rootPath->setText(QString::fromStdString(root_path));
     ui->lineEdit_rootPath->setMinimumWidth(500);
@@ -143,23 +145,40 @@ MainWindow::~MainWindow()
  */
 void MainWindow::get_dir(std::string path, std::vector<std::string>& dir)
 {
-    dir.clear();
-    HANDLE hFind;
-    WIN32_FIND_DATAA data;
-    std::string path_(path);
-    path_+="*";
-    //std::cout << path_ << std::endl;
-    hFind = FindFirstFileA(path_.c_str(), &data);
-    if (hFind != INVALID_HANDLE_VALUE)
+  // dir.clear();
+  // HANDLE hFind;
+  // WIN32_FIND_DATAA data;
+  // std::string path_(path);
+  // path_+="*";
+  // //std::cout << path_ << std::endl;
+  // hFind = FindFirstFileA(path_.c_str(), &data);
+  // if (hFind != INVALID_HANDLE_VALUE)
+  // {
+  //     do {
+  //         if( data.dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY)
+  //         {
+  //             dir.push_back(data.cFileName);
+  //             //std::cout << data.cFileName << std::endl;
+  //         }
+  //     } while( FindNextFileA( hFind, &data) );  // FindNextFileA if using char strings (instead of TCHAR strings)
+  //     FindClose( hFind );
+  // }
+  DIR *d;
+  struct dirent *ent;
+  if ((d = opendir (path.c_str())) != NULL)
     {
-        do {
-            if( data.dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY)
-            {
-                dir.push_back(data.cFileName);
-                //std::cout << data.cFileName << std::endl;
-            }
-        } while( FindNextFileA( hFind, &data) );  // FindNextFileA if using char strings (instead of TCHAR strings)
-        FindClose( hFind );
+      /* print all the files and directories within directory */
+      while ((ent = readdir (d)) != NULL)
+	{//#ifdef _DIRENT_HAVE_D_TYPE
+      if(ent->d_type == 4)
+	    dir.push_back(ent->d_name);
+      std::cout << ent->d_name << "(t:"  << (int)ent->d_type <<   ")" << std::endl;
+	}
+      closedir (d);
+    }
+  else
+    {
+      std::cout << "could not open directory"<< std::endl;
     }
 }
 
@@ -169,28 +188,48 @@ void MainWindow::get_dir(std::string path, std::vector<std::string>& dir)
  * @param file File to find.
  * @return true if found.
  */
-bool MainWindow::is_there(std::string path, std::string file)
-{
-    HANDLE hFind;
-    WIN32_FIND_DATAA data;
-    std::string path_(path);
-    path_+="*";
-    //std::cout << path_ << std::endl;
-    hFind = FindFirstFileA(path_.c_str(), &data);
-    if (hFind != INVALID_HANDLE_VALUE)
-    {
-        do {
-            //std::cout << file << " " << data.cFileName << std::endl;
-            if(file.compare(data.cFileName)==0)
-            {
-                FindClose( hFind );
-                return true;
-            }
-        } while( FindNextFileA( hFind, &data) );  // FindNextFileA if using char strings (instead of TCHAR strings)
-        FindClose( hFind );
-    }
-    return false;
-}
+ bool MainWindow::is_there(std::string path, std::string file)
+ {
+   // HANDLE hFind;
+   // WIN32_FIND_DATAA data;
+   // std::string path_(path);
+   // path_+="*";
+   // //std::cout << path_ << std::endl;
+   // hFind = FindFirstFileA(path_.c_str(), &data);
+   // if (hFind != INVALID_HANDLE_VALUE)
+   // {
+   //     do {
+   //         //std::cout << file << " " << data.cFileName << std::endl;
+   //         if(file.compare(data.cFileName)==0)
+   //         {
+   //             FindClose( hFind );
+   //             return true;
+   //         }
+   //     } while( FindNextFileA( hFind, &data) );  // FindNextFileA if using char strings (instead of TCHAR strings)
+   //     FindClose( hFind );
+   // }
+   // return false;
+   DIR *d;
+   struct dirent *ent;
+   if ((d = opendir (path.c_str())) != NULL)
+     {
+       /* print all the files and directories within directory */
+       while ((ent = readdir (d)) != NULL)
+	 {//#ifdef _DIRENT_HAVE_D_TYPE
+	   if(ent->d_type != DT_UNKNOWN && ent->d_type == DT_LNK && file.compare(ent->d_name)==0)
+	     {
+	       closedir (d);
+	       return true;
+	     }
+	 }
+       closedir (d);
+     }
+   else
+     {
+       std::cout << "could not open directory"<< std::endl;
+     }
+   return false;
+ }
 
 /**
  * @brief MainWindow::launch launch the plugging link to the given coordinate (folder, pluggin).
@@ -200,19 +239,19 @@ bool MainWindow::is_there(std::string path, std::string file)
 void MainWindow::launch(int folder, int pluggin)
 {
 
-    std::vector<std::string> v;
+  std::vector<std::string> v;
 #ifdef WIN32
-    std::string command;
-        command = "cd "+ root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin] + " && ";
+  std::string command;
+  command = "cd "+ root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin] + " && ";
 
-        command += "start cmd /k "+ project_line_path[folder][pluggin]->text().toStdString() + " " + project_line_args[folder][pluggin]->text().toStdString();
+  command += "start cmd /k "+ project_line_path[folder][pluggin]->text().toStdString() + " " + project_line_args[folder][pluggin]->text().toStdString();
 #else
-        std::string command = "";
+  std::string command = "";
 #endif
 
 
-        std::cout << command << std::endl;
-        std::system(command.c_str());
+  std::cout << command << std::endl;
+  std::system(command.c_str());
 }
 
 /**
