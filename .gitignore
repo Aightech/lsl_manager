@@ -3,6 +3,8 @@
 !lsl_manager.pro
 !/bin
 !/bin/*
+!/form
+!/form/*
 !/src
 !/src/*
 !/include
