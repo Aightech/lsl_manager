@@ -10,11 +10,17 @@
 #include <fileapi.h>
 #include <sys/types.h>
 #include <direct.h>
+#define SEP_PATH "\\"
 #define GetCurrentDir _getcwd
+#define OS "WIN32"
+#define ext_OS ".exe"
 #else
 #include <unistd.h>
+#define SEP_PATH "/"
 #define MAX_PATH 100
 #define GetCurrentDir getcwd
+#define OS "UNIX"
+#define ext_OS ""
 #endif
 
 #include <string>

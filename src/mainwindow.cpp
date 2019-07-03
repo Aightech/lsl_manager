@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -44,7 +46,7 @@ MainWindow::MainWindow(QWidget *parent) :
         else
         {
             std::cout <<(*it) << std::endl;
-            get_dir(root_path+(*it)+"\\",v);
+            get_dir(root_path+(*it)+SEP_PATH,v);
             for (std::vector<std::string>::iterator it2 = v.begin() ; it2 != v.end(); ++it2)
                 if(it2->c_str()[0] == '.' || it2->compare("docs")==0 || it2->compare("lsl_manager")==0 || it2->compare("lsl_managerWeb")==0)
                     v.erase (it2--);
@@ -65,14 +67,13 @@ MainWindow::MainWindow(QWidget *parent) :
         {
             project_path[i].push_back("none");
             project_args[i].push_back("");
-            get_dir(root_path+project_folders[i]+"\\"+project_pluggins[i][j]+"\\bin",v);
+            get_dir(root_path+project_folders[i]+SEP_PATH+project_pluggins[i][j]+SEP_PATH+"bin",v);
             if(v.size()>0)
             {
-                get_dir(root_path+project_folders[i]+"\\"+project_pluggins[i][j]+"\\bin\\WIN32\\",v);
-                if(v.size()>2)
-                {
-                    project_path[i][j] = root_path+project_folders[i]+"\\"+project_pluggins[i][j]+"\\bin\\WIN32\\"+ v[2] + "\\" +project_pluggins[i][j] + ".exe";
-                }
+                get_dir(root_path+project_folders[i]+SEP_PATH+project_pluggins[i][j]+SEP_PATH+"bin"+SEP_PATH+OS+SEP_PATH,v);
+                for(int k =0; k< v.size(); k++)
+                    if(v[k].compare(".")!=0 && v[k].compare("..")!=0)
+                        project_path[i][j] = root_path+project_folders[i]+SEP_PATH+project_pluggins[i][j] + SEP_PATH +"bin"+SEP_PATH+OS+SEP_PATH+ v[k] + SEP_PATH +project_pluggins[i][j] + ext_OS;
             }
 
         }
@@ -171,6 +172,7 @@ void MainWindow::get_dir(std::string path, std::vector<std::string>& dir)
 #ifdef _DIRENT_HAVE_D_TYPE
             if(ent->d_type == 4)
                 dir.push_back(ent->d_name);
+            //std::cout << ent->d_name << "  :  " << (int)ent->d_type << std::endl;
 #else
            struct stat stbuf;
            stat((path + ent->d_name).c_str(), &stbuf);
@@ -230,12 +232,12 @@ void MainWindow::launch(int folder, int pluggin)
 #ifdef WIN32
     std::string command;
     command = "cd "+ root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin] + " && ";
-
     command += "start cmd /k "+ project_line_path[folder][pluggin]->text().toStdString() + " " + project_line_args[folder][pluggin]->text().toStdString();
 #else
-    std::string command = "";
+    std::string command;
+    command = "cd "+ root_path+project_folders[folder]+SEP_PATH+project_pluggins[folder][pluggin] + " && ";
+    command += "gnome-terminal -x sh -c '/" + project_line_path[folder][pluggin]->text().toStdString() + " " + project_line_args[folder][pluggin]->text().toStdString() + "; exec bash'";
 #endif
-
 
     std::cout << command << std::endl;
     std::system(command.c_str());
@@ -249,22 +251,26 @@ void MainWindow::launch(int folder, int pluggin)
 void MainWindow::build(int folder, int pluggin)
 {
     std::string command;
-    if(is_there(root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin]+"\\", project_pluggins[folder][pluggin]+".pro") )
+    if(is_there(root_path+project_folders[folder]+SEP_PATH+project_pluggins[folder][pluggin]+SEP_PATH, project_pluggins[folder][pluggin]+".pro") )
     {
-        command = "qmake " + root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin]+"\\" +project_pluggins[folder][pluggin]+".pro";
+        command = "qmake " + root_path+project_folders[folder]+SEP_PATH+project_pluggins[folder][pluggin]+SEP_PATH +project_pluggins[folder][pluggin]+".pro";
         std::cout << command << std::endl;
         std::system(command.c_str());
         command = "";
     }
     else
     {
-        if(!is_there(root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin]+"\\","build"))
-            command = "mkdir " +root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin]+"\\build && ";
+        if(!is_there(root_path+project_folders[folder]+SEP_PATH+project_pluggins[folder][pluggin]+SEP_PATH,"build"))
+            command = "mkdir " +root_path+project_folders[folder]+SEP_PATH+project_pluggins[folder][pluggin]+SEP_PATH+"build && ";
 
-        command += "cd " +root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin]+"\\build && cmake ..  -G \"MinGW Makefiles\" ";
+        command += "cd " +root_path+project_folders[folder]+SEP_PATH+project_pluggins[folder][pluggin]+SEP_PATH+"build && cmake ..";
+#ifdef WIN32
+        command += "-G \"MinGW Makefiles\" ";
+#endif
+
         std::cout << command << std::endl;
         std::system(command.c_str());
-        command = "cd " +root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin]+"\\build && ";
+        command = "cd " +root_path+project_folders[folder]+SEP_PATH+project_pluggins[folder][pluggin]+SEP_PATH+"build && ";
     }
 
 #ifdef WIN32
@@ -275,12 +281,13 @@ void MainWindow::build(int folder, int pluggin)
     std::cout << command << std::endl;
     std::system(command.c_str());
     std::vector<std::string> v;
-    get_dir(root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin]+"\\bin\\WIN32\\",v);
-    if(v.size()>0)
-    {
-        project_path[folder][pluggin] = root_path+project_folders[folder]+"\\"+project_pluggins[folder][pluggin]+"\\bin\\WIN32\\"+ v[0] + "\\" +project_pluggins[folder][pluggin] + ".exe";
-        project_line_path[folder][pluggin]->setText(QString::fromStdString(project_path[folder][pluggin]));
-    }
+    get_dir(root_path+project_folders[folder]+SEP_PATH+project_pluggins[folder][pluggin]+ SEP_PATH + "bin" + SEP_PATH + OS+ SEP_PATH, v);
+    for(int k =0; k< v.size(); k++)
+        if(v[k].compare(".")!=0 && v[k].compare("..")!=0)
+        {
+            project_path[folder][pluggin] = root_path+project_folders[pluggin]+SEP_PATH+project_pluggins[folder][pluggin] + SEP_PATH +"bin"+SEP_PATH+OS+SEP_PATH+ v[k] + SEP_PATH +project_pluggins[folder][pluggin] + ext_OS;
+            project_line_path[folder][pluggin]->setText(QString::fromStdString(project_path[folder][pluggin]));
+        }
 
 
 }
