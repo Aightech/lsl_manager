@@ -13,7 +13,7 @@
 
 
 
-MainWindow::MainWindow(QWidget *parent) :
+MainWindow::MainWindow(std::string path, QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
@@ -27,11 +27,17 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //find the root path of the tne project
     char buffer[MAX_PATH];
-    GetCurrentDir(buffer, MAX_PATH);
+#ifdef WIN32
+    GetModuleFileNameA(NULL, buffer, MAX_PATH);
+#else
+    strcpy(buffer, path.c_str());
+#endif
+    std::cout << buffer << std::endl;
+
+
     
     char * c = strstr(buffer, "tne_project")+12;
     *c = '\0';
-    std::cout << buffer << std::endl;
     root_path = buffer;
     ui->lineEdit_rootPath->setText(QString::fromStdString(root_path));
     ui->lineEdit_rootPath->setMinimumWidth(500);
@@ -45,13 +51,10 @@ MainWindow::MainWindow(QWidget *parent) :
             project_folders.erase (it--);
         else
         {
-            std::cout <<(*it) << std::endl;
             get_dir(root_path+(*it)+SEP_PATH,v);
             for (std::vector<std::string>::iterator it2 = v.begin() ; it2 != v.end(); ++it2)
                 if(it2->c_str()[0] == '.' || it2->compare("docs")==0 || it2->compare("lsl_manager")==0 || it2->compare("lsl_managerWeb")==0)
                     v.erase (it2--);
-            for(int i = 0; i< v.size() ; i++)
-                std::cout << "> " << v[i] << std::endl;
             project_pluggins.push_back(v);
 
         }
@@ -172,14 +175,12 @@ void MainWindow::get_dir(std::string path, std::vector<std::string>& dir)
 #ifdef _DIRENT_HAVE_D_TYPE
             if(ent->d_type == 4)
                 dir.push_back(ent->d_name);
-            //std::cout << ent->d_name << "  :  " << (int)ent->d_type << std::endl;
 #else
            struct stat stbuf;
            stat((path + ent->d_name).c_str(), &stbuf);
            if(S_ISDIR(stbuf.st_mode))
                dir.push_back(ent->d_name);
 #endif
-           std::cout <<ent->d_name << std::endl;
         }
 
         closedir (d);

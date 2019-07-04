@@ -17,8 +17,8 @@
 #else
 #include <unistd.h>
 #define SEP_PATH "/"
-#define MAX_PATH 100
-#define GetCurrentDir getcwd
+#define MAX_PATH 500
+#define GetCurrentDir readlink
 #define OS "UNIX"
 #define ext_OS ""
 #endif
@@ -38,7 +38,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(std::string path, QWidget *parent = nullptr);
     ~MainWindow();
 
     /**
