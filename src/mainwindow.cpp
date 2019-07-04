@@ -254,10 +254,15 @@ void MainWindow::build(int folder, int pluggin)
     std::string command;
     if(is_there(root_path+project_folders[folder]+SEP_PATH+project_pluggins[folder][pluggin]+SEP_PATH, project_pluggins[folder][pluggin]+".pro") )
     {
-        command = "qmake " + root_path+project_folders[folder]+SEP_PATH+project_pluggins[folder][pluggin]+SEP_PATH +project_pluggins[folder][pluggin]+".pro";
+#ifndef WIN32
+        command = "cd "+ root_path+project_folders[folder]+SEP_PATH+project_pluggins[folder][pluggin] + " && ";
+        command += "/opt/Qt5.12.2/5.12.2/gcc_64/bin//";
+#endif
+        command += "qmake " + root_path+project_folders[folder]+SEP_PATH+project_pluggins[folder][pluggin]+SEP_PATH +project_pluggins[folder][pluggin]+".pro";
         std::cout << command << std::endl;
         std::system(command.c_str());
         command = "";
+        command = "cd " +root_path+project_folders[folder]+SEP_PATH+project_pluggins[folder][pluggin]+" && ";
     }
     else
     {
