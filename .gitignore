@@ -17,6 +17,7 @@
 !CMakeLists.txt
 !install.bat
 !mkshcut.bat
+!lsl_manager.desktop
 
 /bin/WIN32/Window/*
 !/bin/WIN32/Window/lsl_manager.exe

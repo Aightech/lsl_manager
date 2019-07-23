@@ -237,7 +237,7 @@ void MainWindow::launch(int folder, int pluggin)
 #else
     std::string command;
     command = "cd "+ root_path+project_folders[folder]+SEP_PATH+project_pluggins[folder][pluggin] + " && ";
-    command += "gnome-terminal -x sh -c '/" + project_line_path[folder][pluggin]->text().toStdString() + " " + project_line_args[folder][pluggin]->text().toStdString() + "; exec bash'";
+    command += "gnome-terminal -x sh -c '" + project_line_path[folder][pluggin]->text().toStdString() + " " + project_line_args[folder][pluggin]->text().toStdString() + "; exec bash'";
 #endif
 
     std::cout << command << std::endl;

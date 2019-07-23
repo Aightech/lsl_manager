@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Terminal=true
+Exec=/home/aightech/Documents/epfl/tne_project/other/lsl_manager/bin/UNIX/Linux/lsl_manager
+Name=lsl manager
+Comment=Skype
+Icon=/home/aightech/Documents/epfl/tne_project/other/lsl_manager/docs/logo.png
+Name[en_US]=lsl_manager.desktop
